@@ -1,0 +1,1585 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DailySync.</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        appleGray: {
+                            50: '#f5f5f7',
+                            100: '#e8e8ed',
+                            200: '#d2d2d7',
+                            300: '#86868b',
+                            400: '#424245',
+                            500: '#1d1d1f',
+                        },
+                        appleBlue: '#0071e3',
+                        appleOrange: '#f56300',
+                    },
+                    fontFamily: {
+                        sans: ['-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Custom scrollbars to match clean premium aesthetic */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 999px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.15);
+            border-radius: 999px;
+        }
+    </style>
+</head>
+<body class="bg-appleGray-50 dark:bg-black text-appleGray-500 dark:text-appleGray-100 transition-colors duration-300 h-screen w-screen overflow-hidden flex flex-col font-sans select-none">
+
+    <!-- Header bar -->
+    <header class="h-16 shrink-0 bg-white/70 dark:bg-neutral-900/75 backdrop-blur-md border-b border-appleGray-200 dark:border-neutral-800 px-6 flex items-center justify-between z-40">
+        <div class="flex items-center gap-3">
+            <button onclick="toggleSidebar()" class="p-2 hover:bg-appleGray-100 dark:hover:bg-neutral-800 rounded-lg text-appleGray-300 hover:text-appleGray-500 dark:hover:text-white transition duration-200">
+                <i class="fa-solid fa-sidebar text-lg"></i>
+            </button>
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-calendar-alt text-appleBlue text-xl"></i>
+                <span class="font-bold text-base tracking-tight">DailySync.</span>
+            </div>
+        </div>
+
+        <!-- Top Header Action Controls -->
+        <div class="flex items-center gap-3">
+            <!-- Active Account Selector with Custom Tailwind Dropdown -->
+            <div class="relative" id="userDropdownContainer">
+                <button onclick="toggleTailwindDropdown('userDropdownMenu', event)" class="flex items-center gap-1.5 bg-appleGray-100 dark:bg-neutral-800 px-3 py-1.5 rounded-full border border-appleGray-200 dark:border-neutral-700 hover:bg-appleGray-200 dark:hover:bg-neutral-700 transition text-appleGray-500 dark:text-appleGray-100">
+                    <span class="text-[10px] font-bold text-appleGray-300 uppercase tracking-wide">User:</span>
+                    <span id="selectedUserLabel" class="text-xs font-bold">HDV</span>
+                    <i class="fa-solid fa-chevron-down text-[8px] text-appleGray-300"></i>
+                </button>
+                <div id="userDropdownMenu" class="hidden absolute right-0 mt-1.5 w-48 bg-white dark:bg-neutral-900 border border-appleGray-200 dark:border-neutral-800 rounded-xl shadow-lg py-1 z-50 text-appleGray-500 dark:text-appleGray-100">
+                    <button onclick="selectUser('HDV')" class="w-full text-left px-4 py-2 text-xs font-bold hover:bg-appleGray-100 dark:hover:bg-neutral-850">HDV</button>
+                    <button onclick="selectUser('HZK')" class="w-full text-left px-4 py-2 text-xs font-bold hover:bg-appleGray-100 dark:hover:bg-neutral-850">HZK</button>
+                </div>
+            </div>
+
+            <!-- Auto-hide Filters with Custom Tailwind Dropdown -->
+            <div class="relative" id="filterDropdownContainer">
+                <button onclick="toggleTailwindDropdown('filterDropdownMenu', event)" class="flex items-center gap-1.5 bg-appleGray-100 dark:bg-neutral-800 px-3 py-1.5 rounded-full border border-appleGray-200 dark:border-neutral-700 hover:bg-appleGray-200 dark:hover:bg-neutral-700 transition text-appleGray-500 dark:text-appleGray-100">
+                    <span class="text-[10px] font-bold text-appleGray-300 uppercase tracking-wide">Filter:</span>
+                    <span id="selectedFilterLabel" class="text-xs font-bold">Hide Overdue</span>
+                    <i class="fa-solid fa-chevron-down text-[8px] text-appleGray-300"></i>
+                </button>
+                <div id="filterDropdownMenu" class="hidden absolute right-0 mt-1.5 w-56 bg-white dark:bg-neutral-900 border border-appleGray-200 dark:border-neutral-800 rounded-xl shadow-lg py-1 z-50 text-appleGray-500 dark:text-appleGray-100">
+                    <button onclick="selectFilter('hide')" class="w-full text-left px-4 py-2 text-xs font-bold hover:bg-appleGray-100 dark:hover:bg-neutral-850">Hide Overdue</button>
+                    <button onclick="selectFilter('show')" class="w-full text-left px-4 py-2 text-xs font-bold hover:bg-appleGray-100 dark:hover:bg-neutral-850">Show All Events</button>
+                </div>
+            </div>
+
+            <!-- Clock Display -->
+            <div class="hidden md:flex flex-col text-right">
+                <span id="currentTime" class="text-xs font-bold">00:00:00</span>
+                <span id="currentDate" class="text-[10px] text-appleGray-300 font-medium">Date</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex flex-1 overflow-hidden relative">
+        <!-- SIDEBAR (Collapsible layout with bottom settings circular button) -->
+        <aside id="sidebar" class="w-64 h-full bg-appleGray-50 dark:bg-neutral-900/50 border-r border-appleGray-200 dark:border-neutral-800 flex flex-col justify-between transition-all duration-300 ease-in-out shrink-0 z-30 overflow-hidden">
+            <div class="p-4 flex flex-col gap-6">
+                <!-- Navigation Tabs List -->
+                <div>
+                    <h3 class="sidebar-text text-[10px] font-bold text-appleGray-300 uppercase tracking-wider px-3 mb-2">Navigation</h3>
+                    <div id="sidebarTabsContainer" class="flex flex-col gap-1">
+                        <!-- Dynamic Tabs rendered via JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar Bottom Preferences Settings -->
+            <div class="p-3 border-t border-appleGray-200 dark:border-neutral-800">
+                <button onclick="openSettings()" id="sidebarSettingsBtn" class="w-full flex items-center p-2.5 hover:bg-appleGray-100 dark:hover:bg-neutral-800 rounded-xl transition duration-200 text-left justify-start">
+                    <div class="w-8 h-8 rounded-full bg-appleBlue flex items-center justify-center text-white font-bold text-xs shrink-0 shadow">
+                        <i class="fa-solid fa-cog"></i>
+                    </div>
+                    <div class="sidebar-text ml-3 overflow-hidden">
+                        <p class="text-[10px] font-bold text-appleGray-300 uppercase tracking-wider">Preferences</p>
+                        <p class="text-xs font-semibold text-neutral-400 truncate max-w-[120px]">Configure System</p>
+                    </div>
+                </button>
+            </div>
+        </aside>
+
+        <main class="flex-1 overflow-y-auto p-4 md:p-6" id="mainContent">
+
+            <!-- SECTION 1: EVENT LIST (Spreadsheet Style) -->
+            <section id="tab-event-list" class="tab-panel flex flex-col gap-6">
+                <!-- Action Controls Bar -->
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-neutral-900 p-5 rounded-2xl border border-appleGray-200 dark:border-neutral-800 shadow-sm">
+                    <div>
+                        <h1 class="text-lg font-bold flex items-center gap-2">
+                            <i class="fa-solid fa-table-list text-appleBlue"></i>
+                            Spreadsheet Manager: <span id="currentAccountTitle" class="text-appleBlue">HDV</span>
+                        </h1>
+                        <p class="text-xs text-appleGray-300 mt-0.5">Input events, specify triggers, and manage cloud attachments.</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="addNewRow()" class="px-4 py-2 bg-appleBlue hover:bg-blue-600 text-white rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow active:scale-95">
+                            <i class="fa-solid fa-plus"></i> Add Row
+                        </button>
+                        <button onclick="saveAllEvents()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow active:scale-95">
+                            <i class="fa-solid fa-floppy-disk"></i> Save Changes
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-neutral-900 rounded-2xl border border-appleGray-200 dark:border-neutral-800 overflow-hidden shadow-sm">
+                    <div class="p-4 border-b border-appleGray-200 dark:border-neutral-800 bg-appleGray-50 dark:bg-neutral-900/50 flex items-center justify-between">
+                        <span class="text-xs font-bold text-appleGray-300 tracking-wider uppercase">Active Data Grid</span>
+                        <div class="text-[10px] text-amber-500 font-semibold flex items-center gap-1">
+                            <i class="fa-solid fa-circle-exclamation"></i> Save changes after edits
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto w-full">
+                        <table class="w-full text-left border-collapse" style="min-width: 1300px;">
+                            <thead>
+                                <tr class="border-b border-appleGray-200 dark:border-neutral-800 text-[10px] font-bold text-appleGray-300 bg-appleGray-50/50 dark:bg-neutral-900/30 uppercase tracking-wider">
+                                    <th class="py-3 px-4 w-14 text-center">Check</th>
+                                    <th class="py-3 px-3 w-48">Event Name</th>
+                                    <th class="py-3 px-3 w-56">Description</th>
+                                    <th class="py-3 px-3 w-40">Date</th>
+                                    <th class="py-3 px-3 w-28">Time</th>
+                                    <th class="py-3 px-3 w-28 text-center">Days Left</th>
+                                    <th class="py-3 px-3 w-36">Status</th>
+                                    <th class="py-3 px-3 w-32">Result</th>
+                                    <th class="py-3 px-3 w-40">Location</th>
+                                    <th class="py-3 px-3 w-56">Details</th>
+                                    <th class="py-3 px-3 w-28 text-center">Alarm</th>
+                                    <th class="py-3 px-4 w-16 text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="spreadsheetBody" class="divide-y divide-appleGray-100 dark:divide-neutral-800">
+                                <!-- Dynamic rows are built here using Javascript -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="noEventsMessage" class="hidden p-12 text-center text-appleGray-300 flex-col items-center justify-center gap-2">
+                        <i class="fa-solid fa-folder-open text-4xl opacity-55"></i>
+                        <p class="font-semibold text-sm">No Events Registered</p>
+                        <p class="text-xs">Create items inside active lists to generate schedules.</p>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-neutral-900 p-6 rounded-2xl border border-appleGray-200 dark:border-neutral-800 shadow-sm">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-appleGray-200 dark:border-neutral-800 pb-4 mb-6">
+                        <div>
+                            <h2 class="text-base font-bold flex items-center gap-2">
+                                <i class="fa-solid fa-cloud-arrow-up text-appleBlue"></i>
+                                File Folder - <span id="driveAccountTitle" class="text-appleBlue">HDV</span>
+                            </h2>
+                            <p class="text-xs text-appleGray-300 mt-0.5">Manage supplementary attachments locally.</p>
+                        </div>
+                    </div>
+
+                    <!-- Drive Files Grid -->
+                    <div id="driveFilesGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                        <!-- Square Upload Trigger and dynamic files rendered here -->
+                    </div>
+
+                    <div id="noDriveFilesMessage" class="hidden p-8 text-center text-appleGray-300 flex flex-col items-center justify-center gap-2">
+                        <i class="fa-solid fa-hard-drive text-3xl opacity-50"></i>
+                        <p class="font-semibold text-xs">Drive is Empty</p>
+                        <p class="text-[10px]">Upload reference attachments directly to localized storage containers.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Calendar Section -->
+            <section id="tab-calendar" class="tab-panel hidden flex flex-col gap-6">
+                <!-- Header Control & Month Switcher -->
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-neutral-900 p-5 rounded-2xl border border-appleGray-200 dark:border-neutral-800 shadow-sm">
+                    <div>
+                        <h1 class="text-lg font-bold flex items-center gap-2">
+                            <i class="fa-solid fa-calendar-days text-appleBlue"></i>
+                            Calendar
+                        </h1>
+                        <p class="text-xs text-appleGray-300 mt-0.5">Orange markers represent <span class="text-appleOrange font-bold">HDV</span>, blue markers denote <span class="text-appleBlue font-bold">HZK</span> events.</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="changeMonth(-1)" class="p-2 hover:bg-appleGray-100 dark:hover:bg-neutral-800 rounded-xl border border-appleGray-200 dark:border-neutral-700 transition">
+                            <i class="fa-solid fa-chevron-left text-xs"></i>
+                        </button>
+                        <h2 id="calendarMonthYear" class="text-sm font-bold min-w-[120px] text-center uppercase tracking-wide">Month Year</h2>
+                        <button onclick="changeMonth(1)" class="p-2 hover:bg-appleGray-100 dark:hover:bg-neutral-800 rounded-xl border border-appleGray-200 dark:border-neutral-700 transition">
+                            <i class="fa-solid fa-chevron-right text-xs"></i>
+                        </button>
+                        <button onclick="setCalendarToToday()" class="px-3 py-2 bg-appleGray-100 dark:bg-neutral-800 hover:bg-appleGray-200 dark:hover:bg-neutral-700 text-xs font-semibold rounded-xl transition">
+                            Today
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Calendar Grid Container -->
+                <div class="bg-white dark:bg-neutral-900 rounded-3xl border border-appleGray-200 dark:border-neutral-800 overflow-hidden shadow-sm">
+                    <!-- Day names -->
+                    <div class="grid grid-cols-7 border-b border-appleGray-200 dark:border-neutral-800 bg-appleGray-50 dark:bg-neutral-900/50 text-center py-3 text-[10px] font-bold text-appleGray-300 uppercase tracking-widest">
+                        <div>Sun</div>
+                        <div>Mon</div>
+                        <div>Tue</div>
+                        <div>Wed</div>
+                        <div>Thu</div>
+                        <div>Fri</div>
+                        <div>Sat</div>
+                    </div>
+                    <!-- Calendar days grid -->
+                    <div id="calendarGrid" class="grid grid-cols-7 divide-x divide-y divide-appleGray-200 dark:divide-neutral-800 bg-appleGray-200 dark:bg-neutral-800">
+                        <!-- Calendar boxes rendered dynamically -->
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- SETTINGS PREFERENCES MODAL DIALOG -->
+    <div id="settingsModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4 transition-all duration-300">
+        <div class="bg-white dark:bg-neutral-900 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl border border-appleGray-200 dark:border-neutral-800 transform scale-95 transition-transform duration-300" id="settingsContent">
+            <!-- Modal Header -->
+            <div class="px-6 py-4 border-b border-appleGray-200 dark:border-neutral-800 flex items-center justify-between bg-appleGray-50 dark:bg-neutral-900/50">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-sliders text-appleBlue"></i>
+                    <h3 class="text-sm font-bold uppercase tracking-wider">Preferences & Settings</h3>
+                </div>
+                <button onclick="closeSettings()" class="text-appleGray-300 hover:text-appleGray-500 dark:hover:text-white transition p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Modal Content Section -->
+            <div class="p-6 flex flex-col gap-5 overflow-y-auto max-h-[70vh]">
+                <!-- Display Theme Switcher -->
+                <div>
+                    <label class="text-[10px] font-bold text-appleGray-300 uppercase tracking-wider block mb-2">Display Theme</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="setThemeSetting('light')" id="themeBtnLight" class="flex items-center justify-center gap-2 p-3 border rounded-xl text-xs font-semibold transition">
+                            <i class="fa-solid fa-sun text-amber-500"></i> Light Mode
+                        </button>
+                        <button onclick="setThemeSetting('dark')" id="themeBtnDark" class="flex items-center justify-center gap-2 p-3 border rounded-xl text-xs font-semibold transition">
+                            <i class="fa-solid fa-moon text-indigo-500"></i> Dark Mode
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tab Sorting Setup with Tailwind Custom Dropdown -->
+                <div>
+                    <label class="text-[10px] font-bold text-appleGray-300 uppercase tracking-wider block mb-2">Primary Tab Order</label>
+                    <div class="relative w-full" id="settingTabOrderContainer">
+                        <button onclick="toggleSettingDropdown('settingTabOrderMenu', event)" class="w-full flex items-center justify-between bg-appleGray-50 dark:bg-neutral-800 border border-appleGray-200 dark:border-neutral-700 p-2.5 rounded-xl text-xs font-semibold focus:outline-none text-appleGray-500 dark:text-appleGray-100">
+                            <span id="settingTabOrderLabel">1. Event List ➔ 2. Calendar</span>
+                            <i class="fa-solid fa-chevron-down text-[10px] text-appleGray-300"></i>
+                        </button>
+                        <div id="settingTabOrderMenu" class="hidden absolute left-0 right-0 mt-1.5 bg-white dark:bg-neutral-900 border border-appleGray-200 dark:border-neutral-800 rounded-xl shadow-lg py-1 z-50 text-appleGray-500 dark:text-appleGray-100">
+                            <button onclick="selectSettingOption('tabOrder', 'event-first', '1. Event List ➔ 2. Calendar', event)" class="w-full text-left px-4 py-2 text-xs font-semibold hover:bg-appleGray-100 dark:hover:bg-neutral-850">1. Event List ➔ 2. Calendar</button>
+                            <button onclick="selectSettingOption('tabOrder', 'cal-first', '1. Calendar ➔ 2. Event List', event)" class="w-full text-left px-4 py-2 text-xs font-semibold hover:bg-appleGray-100 dark:hover:bg-neutral-850">1. Calendar ➔ 2. Event List</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Audio Notifications Panel -->
+                <div>
+                    <label class="text-[10px] font-bold text-appleGray-300 uppercase tracking-wider block mb-2">Audio Notifications</label>
+                    <div class="flex flex-col gap-3">
+                        <div class="flex items-center justify-between p-3 bg-appleGray-50 dark:bg-neutral-800/50 rounded-xl">
+                            <div>
+                                <p class="text-xs font-semibold">Alarm Tone</p>
+                                <p class="text-[10px] text-appleGray-300">Choose trigger signal audio alert.</p>
+                            </div>
+
+                            <!-- Custom Tailwind Dropdown inside modal instead of native select -->
+                            <div class="relative" id="settingAlarmAudioContainer">
+                                <button onclick="toggleSettingDropdown('settingAlarmAudioMenu', event)" class="flex items-center justify-between bg-appleGray-100 dark:bg-neutral-850 border border-appleGray-200 dark:border-neutral-700 p-2 rounded-lg text-[11px] font-bold focus:outline-none text-appleGray-500 dark:text-appleGray-100 min-w-[160px]">
+                                    <span id="settingAlarmAudioLabel">Modern Chime (Bells)</span>
+                                    <i class="fa-solid fa-chevron-down text-[8px] text-appleGray-300 ml-2"></i>
+                                </button>
+                                <div id="settingAlarmAudioMenu" class="hidden absolute right-0 mt-1.5 w-48 bg-white dark:bg-neutral-900 border border-appleGray-200 dark:border-neutral-800 rounded-xl shadow-lg py-1 z-50 text-appleGray-500 dark:text-appleGray-100">
+                                    <button onclick="selectSettingOption('alarmSound', 'chime', 'Modern Chime (Bells)', event)" class="w-full text-left px-4 py-2 text-xs font-semibold hover:bg-appleGray-100 dark:hover:bg-neutral-850">Modern Chime (Bells)</button>
+                                    <button onclick="selectSettingOption('alarmSound', 'digital', 'Classic Beep Pattern', event)" class="w-full text-left px-4 py-2 text-xs font-semibold hover:bg-appleGray-100 dark:hover:bg-neutral-850">Classic Beep Pattern</button>
+                                    <button onclick="selectSettingOption('alarmSound', 'radar', 'Apple Radar Soft', event)" class="w-full text-left px-4 py-2 text-xs font-semibold hover:bg-appleGray-100 dark:hover:bg-neutral-850">Apple Radar Soft</button>
+                                    <button id="customAudioSettingOption" onclick="selectSettingOption('alarmSound', 'custom', 'Uploaded Custom Tone', event)" class="hidden w-full text-left px-4 py-2 text-xs font-semibold hover:bg-appleGray-100 dark:hover:bg-neutral-850">Uploaded Custom Tone</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Custom Alarm Upload Selector -->
+                        <div class="flex items-center justify-between p-3 bg-appleGray-50 dark:bg-neutral-800/50 rounded-xl">
+                            <div>
+                                <p class="text-xs font-semibold">Upload Sound File</p>
+                                <p class="text-[10px] text-appleGray-300">Choose custom .mp3/.wav from device.</p>
+                            </div>
+                            <label class="px-3 py-1.5 bg-appleBlue hover:bg-blue-600 text-white text-[10px] font-semibold rounded-lg cursor-pointer transition">
+                                Upload Sound
+                                <input type="file" id="alarmAudioFileInput" class="hidden" accept="audio/*" onchange="handleAlarmAudioUpload(event)">
+                            </label>
+                        </div>
+
+                        <button onclick="playTestAlarm()" class="w-full py-2 bg-appleGray-100 hover:bg-appleGray-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-[10px] font-semibold rounded-xl border border-appleGray-200 dark:border-neutral-700 transition flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-volume-high text-xs"></i> Test Sound
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Dominant Account Selection with Custom Tailwind Dropdown -->
+                <div>
+                    <label class="text-[10px] font-bold text-appleGray-300 uppercase tracking-wider block mb-2">Dominant Account</label>
+                    <div class="relative w-full mb-3" id="settingDominantAccountContainer">
+                        <button onclick="toggleSettingDropdown('settingDominantAccountMenu', event)" class="w-full flex items-center justify-between bg-appleGray-50 dark:bg-neutral-800 border border-appleGray-200 dark:border-neutral-700 p-2.5 rounded-xl text-xs font-semibold focus:outline-none text-appleGray-500 dark:text-appleGray-100">
+                            <span id="settingDominantAccountLabel">Both
+                            </span>
+                            <i class="fa-solid fa-chevron-down text-[10px] text-appleGray-300"></i>
+                        </button>
+                        <div id="settingDominantAccountMenu" class="hidden absolute left-0 right-0 mt-1.5 bg-white dark:bg-neutral-900 border border-appleGray-200 dark:border-neutral-800 rounded-xl shadow-lg py-1 z-50 text-appleGray-500 dark:text-appleGray-100">
+                            <button onclick="selectSettingOption('dominantAccount', 'HDV', 'HDV (HDV Alarms Trigger only)', event)" class="w-full text-left px-4 py-2 text-xs font-semibold hover:bg-appleGray-100 dark:hover:bg-neutral-850">HDV</button>
+                            <button onclick="selectSettingOption('dominantAccount', 'HZK', 'HZK (HZK Alarms Trigger only)', event)" class="w-full text-left px-4 py-2 text-xs font-semibold hover:bg-appleGray-100 dark:hover:bg-neutral-850">HZK</button>
+                            <button onclick="selectSettingOption('dominantAccount', 'Both', 'Both (Dual Alarms active)', event)" class="w-full text-left px-4 py-2 text-xs font-semibold hover:bg-appleGray-100 dark:hover:bg-neutral-850">Both</button>
+                        </div>
+                    </div>
+
+                    <div id="bothDominantOptions" class="hidden p-3 bg-indigo-50/10 dark:bg-indigo-950/20 border border-indigo-200/20 dark:border-indigo-900/50 rounded-xl">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-xs font-bold text-indigo-500">Universal Alarms Status</p>
+                                <p class="text-[10px] text-slate-400">Toggle whether both schedules can sound alarms.</p>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="bothAlarmToggle" class="sr-only peer" checked>
+                                <div class="w-9 h-5 bg-neutral-300 dark:bg-neutral-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-appleBlue"></div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Preferences Footer -->
+            <div class="px-6 py-4 border-t border-appleGray-200 dark:border-neutral-800 flex justify-end gap-2 bg-appleGray-50 dark:bg-neutral-900/50">
+                <button onclick="closeSettings()" class="px-4 py-2 hover:bg-appleGray-200 dark:hover:bg-neutral-800 rounded-xl text-xs font-semibold transition">Cancel</button>
+                <button onclick="saveAllSettings()" class="px-5 py-2 bg-appleBlue hover:bg-blue-600 text-white rounded-xl text-xs font-semibold shadow transition">Save Preferences</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alarm Popup Ringing Block -->
+    <div id="alarmAlertPopup" class="fixed bottom-6 right-6 z-50 bg-white dark:bg-neutral-900 border-2 border-appleOrange shadow-2xl p-5 rounded-3xl max-w-sm w-full transform translate-y-20 opacity-0 pointer-events-none transition-all duration-500 flex items-start gap-4">
+        <div class="w-12 h-12 bg-appleOrange/15 text-appleOrange flex items-center justify-center rounded-full text-xl animate-bounce shrink-0">
+            <i class="fa-solid fa-bell"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between">
+                <span id="alarmPopupAccount" class="text-[9px] font-bold px-2 py-0.5 rounded-full uppercase bg-appleOrange text-white">HDV</span>
+                <span class="text-xs text-appleGray-300 font-semibold">Trigger Event</span>
+            </div>
+            <h4 id="alarmPopupTitle" class="font-bold text-sm truncate mt-1">Agenda Item</h4>
+            <p id="alarmPopupTime" class="text-xs text-appleGray-300 mt-0.5">Hour (H-1 Hour Alarm)</p>
+            <div class="flex gap-2 mt-4">
+                <button onclick="stopAlarmRinging()" class="flex-1 py-1.5 bg-neutral-200 dark:bg-neutral-800 hover:bg-neutral-300 dark:hover:bg-neutral-700 text-xs font-bold rounded-lg transition text-center">
+                    Mute Signal
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Full screen Text Editor Dialog -->
+    <div id="textEditorModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+        <div class="bg-white dark:bg-neutral-900 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl border border-appleGray-200 dark:border-neutral-800">
+            <div class="px-6 py-4 border-b border-appleGray-200 dark:border-neutral-800 flex items-center justify-between bg-appleGray-50 dark:bg-neutral-900/50">
+                <span id="editorModalTitle" class="text-xs font-bold uppercase tracking-wider text-appleBlue">Edit Data</span>
+                <button onclick="closeTextEditor()" class="text-appleGray-300 hover:text-appleGray-500 dark:hover:text-white transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <textarea id="editorModalTextarea" rows="6" class="w-full bg-appleGray-50 dark:bg-neutral-800 border border-appleGray-200 dark:border-neutral-700 p-3 rounded-2xl text-xs focus:ring-1 focus:ring-appleBlue focus:outline-none font-sans" placeholder="Enter comprehensive details..."></textarea>
+                <div class="flex justify-end gap-2 mt-4">
+                    <button onclick="closeTextEditor()" class="px-4 py-2 hover:bg-appleGray-200 dark:hover:bg-neutral-800 rounded-xl text-xs font-semibold transition">Cancel</button>
+                    <button onclick="saveTextEditor()" class="px-5 py-2 bg-appleBlue hover:bg-blue-600 text-white rounded-xl text-xs font-semibold transition">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <audio id="audioElement" preload="auto" loop></audio>
+
+    <script>
+        const APP_ID = "apple-multi-calendar-drive";
+
+        // Initial core application settings
+        let settings = {
+            theme: 'dark',
+            tabOrder: 'event-first', // or 'cal-first'
+            alarmSound: 'chime', // chime, digital, radar, custom
+            dominantAccount: 'Both', // HDV, HZK, Both
+            bothAlarmOn: true,
+            customAlarmAudio: '' // DataURI base64 audio
+        };
+
+        // Temporary settings used during configuration edit inside modal dialog
+        let tempSettings = {};
+
+        const emptyEventRow = () => ({
+            id: 'evt_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now(),
+            checked: false,
+            eventName: '',
+            desc: '',
+            date: '',
+            time: '',
+            daysLeft: '-',
+            status: '-', // Yet Started, On Progress, Done, Canceled
+            result: '-', // Pass, Lose
+            location: '',
+            details: '',
+            alarm: 'on'
+        });
+
+        let eventsData = {
+            HDV: [],
+            HZK: []
+        };
+
+        let driveData = {
+            HDV: [],
+            HZK: []
+        };
+
+        let state = {
+            currentAccount: 'HDV',
+            currentTab: 'event-list',
+            calendarYear: new Date().getFullYear(),
+            calendarMonth: new Date().getMonth(), // 0-11
+            sidebarOpen: true,
+            filterHidden: 'show', // 'hide' or 'show' (hide events where daysLeft <= -10)
+            activeEditingCell: { rowId: null, field: null }
+        };
+
+        const audioSynthesizer = {
+            generateBeep(freq, duration, count = 2) {
+                const sampleRate = 44100;
+                const totalLength = sampleRate * duration * count;
+                const buffer = new Float32Array(totalLength);
+                for (let i = 0; i < count; i++) {
+                    const start = i * sampleRate * duration;
+                    const len = sampleRate * duration * 0.7;
+                    for (let j = 0; j < len; j++) {
+                        const t = j / sampleRate;
+                        buffer[start + j] = Math.sin(2 * Math.PI * freq * t) * Math.exp(-t * 2);
+                    }
+                }
+                return this.createWavDataUri(buffer, sampleRate);
+            },
+            createWavDataUri(samples, sampleRate) {
+                const buffer = new ArrayBuffer(44 + samples.length * 2);
+                const view = new DataView(buffer);
+                view.setUint32(0, 0x52494646, false); // "RIFF"
+                view.setUint32(4, 36 + samples.length * 2, true);
+                view.setUint32(8, 0x57415645, false); // "WAVE"
+                view.setUint32(12, 0x666d7420, false); // "fmt "
+                view.setUint32(16, 16, true);
+                view.setUint16(20, 1, true);
+                view.setUint16(22, 1, true);
+                view.setUint32(24, sampleRate, true);
+                view.setUint32(28, sampleRate * 2, true);
+                view.setUint16(32, 2, true);
+                view.setUint16(34, 16, true);
+                view.setUint32(36, 0x64617461, false); // "data"
+                view.setUint32(40, samples.length * 2, true);
+                for (let i = 0; i < samples.length; i++) {
+                    const s = Math.max(-1, Math.min(1, samples[i]));
+                    view.setInt16(44 + i * 2, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+                }
+                const base64 = btoa(String.fromCharCode.apply(null, new Uint8Array(buffer)));
+                return 'data:audio/wav;base64,' + base64;
+            }
+        };
+
+        const alarmSoundSources = {
+            chime: audioSynthesizer.generateBeep(587.33, 0.4, 3),
+            digital: audioSynthesizer.generateBeep(880, 0.2, 5),
+            radar: audioSynthesizer.generateBeep(440, 0.6, 2)
+        };
+
+        function loadAllFromStorage() {
+            try {
+                const storedSettings = localStorage.getItem(`${APP_ID}_settings`);
+                if (storedSettings) {
+                    settings = { ...settings, ...JSON.parse(storedSettings) };
+                }
+
+                const storedEvents = localStorage.getItem(`${APP_ID}_events`);
+                if (storedEvents) {
+                    eventsData = JSON.parse(storedEvents);
+                } else {
+                    populateInitialData();
+                }
+
+                const storedDrive = localStorage.getItem(`${APP_ID}_drive`);
+                if (storedDrive) {
+                    driveData = JSON.parse(storedDrive);
+                }
+
+                // If custom alarm was loaded, unhide option
+                if (settings.customAlarmAudio) {
+                    const option = document.getElementById('customAudioSettingOption');
+                    if (option) option.classList.remove('hidden');
+                }
+            } catch (err) {
+                console.error("Local storage initialization failed", err);
+            }
+        }
+
+        function saveAllEvents() {
+            localStorage.setItem(`${APP_ID}_events`, JSON.stringify(eventsData));
+            calculateAllDaysLeft();
+            renderSpreadsheet();
+            renderCalendar();
+            showCustomToast("Data Saved", "Local database events updated successfully.", "success");
+        }
+
+        function saveDriveToStorage() {
+            localStorage.setItem(`${APP_ID}_drive`, JSON.stringify(driveData));
+            renderDriveFiles();
+        }
+
+        function saveSettingsToStorage() {
+            localStorage.setItem(`${APP_ID}_settings`, JSON.stringify(settings));
+        }
+
+        function populateInitialData() {
+            eventsData.HDV = [
+                {
+                    id: 'evt_hdv_1',
+                    checked: false,
+                    eventName: 'Q3 Sales Report Review',
+                    desc: 'Review strategic targets and milestone updates with core shareholders.',
+                    date: getRelativeDateString(2),
+                    time: '14:00',
+                    daysLeft: '2',
+                    status: 'On Progress',
+                    result: '-',
+                    location: 'Conference Room Alpha, HQ',
+                    details: 'Ensure slides and asset decks are compiled in Drive beforehand.',
+                    alarm: 'on'
+                },
+                {
+                    id: 'evt_hdv_2',
+                    checked: true,
+                    eventName: 'Weekly Staff Performance Review',
+                    desc: 'Analyze resource productivity and timeline milestones.',
+                    date: getRelativeDateString(-11),
+                    time: '09:00',
+                    daysLeft: '-11',
+                    status: 'Done',
+                    result: 'Pass',
+                    location: 'Digital Zoom Room',
+                    details: 'Successfully compiled with good feedback indicators.',
+                    alarm: 'off'
+                }
+            ];
+
+            eventsData.HZK = [
+                {
+                    id: 'evt_hzk_1',
+                    checked: false,
+                    eventName: 'Main Node Server Relocation',
+                    desc: 'Perform full cluster migration and system database restoration.',
+                    date: getRelativeDateString(5),
+                    time: '10:00',
+                    daysLeft: '5',
+                    status: 'Yet Started',
+                    result: '-',
+                    location: 'Data Center Suite 4',
+                    details: 'Requires 24-hour network health supervision.',
+                    alarm: 'on'
+                }
+            ];
+            localStorage.setItem(`${APP_ID}_events`, JSON.stringify(eventsData));
+        }
+
+        function getRelativeDateString(daysOffset) {
+            const d = new Date();
+            d.setDate(d.getDate() + daysOffset);
+            return d.toISOString().split('T')[0];
+        }
+
+        function applyTheme() {
+            const root = document.documentElement;
+            if (settings.theme === 'dark') {
+                root.classList.add('dark');
+                document.getElementById('themeBtnDark')?.classList.add('border-appleBlue', 'bg-appleBlue/10');
+                document.getElementById('themeBtnLight')?.classList.remove('border-appleBlue', 'bg-appleBlue/10');
+            } else {
+                root.classList.remove('dark');
+                document.getElementById('themeBtnLight')?.classList.add('border-appleBlue', 'bg-appleBlue/10');
+                document.getElementById('themeBtnDark')?.classList.remove('border-appleBlue', 'bg-appleBlue/10');
+            }
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const sidebarSettingsBtn = document.getElementById('sidebarSettingsBtn');
+            const labels = document.querySelectorAll('.sidebar-text');
+
+            state.sidebarOpen = !state.sidebarOpen;
+
+            if (!state.sidebarOpen) {
+                sidebar.classList.remove('w-64');
+                sidebar.classList.add('w-20');
+                sidebarSettingsBtn.classList.remove('justify-start');
+                sidebarSettingsBtn.classList.add('justify-center');
+                labels.forEach(label => label.classList.add('hidden'));
+            } else {
+                sidebar.classList.remove('w-20');
+                sidebar.classList.add('w-64');
+                sidebarSettingsBtn.classList.remove('justify-center');
+                sidebarSettingsBtn.classList.add('justify-start');
+                labels.forEach(label => label.classList.remove('hidden'));
+            }
+        }
+
+        function renderSidebarTabs() {
+            const container = document.getElementById('sidebarTabsContainer');
+            if (!container) return;
+
+            const tabs = [
+                { id: 'event-list', label: 'Event List', icon: 'fa-table-list' },
+                { id: 'calendar', label: 'Calendar', icon: 'fa-calendar-days' }
+            ];
+
+            if (settings.tabOrder === 'cal-first') {
+                tabs.reverse();
+            }
+
+            container.innerHTML = '';
+            tabs.forEach(tab => {
+                const isActive = state.currentTab === tab.id;
+                const button = document.createElement('button');
+
+                button.className = `w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition text-left ${
+                    isActive
+                    ? 'bg-appleBlue text-white shadow'
+                    : 'text-appleGray-500 dark:text-appleGray-200 hover:bg-appleGray-100 dark:hover:bg-neutral-800'
+                }`;
+                button.onclick = () => switchTab(tab.id);
+
+                button.innerHTML = `
+                    <div class="w-5 h-5 flex items-center justify-center shrink-0">
+                        <i class="fa-solid ${tab.icon} text-sm ${isActive ? 'text-white' : 'text-appleGray-300'}"></i>
+                    </div>
+                    <span class="sidebar-text ${state.sidebarOpen ? '' : 'hidden'}">${tab.label}</span>
+                `;
+                container.appendChild(button);
+            });
+
+            document.querySelectorAll('.tab-panel').forEach(panel => {
+                panel.classList.add('hidden');
+            });
+            const activePanel = document.getElementById(`tab-${state.currentTab}`);
+            if (activePanel) activePanel.classList.remove('hidden');
+        }
+
+        function switchTab(tabId) {
+            state.currentTab = tabId;
+            renderSidebarTabs();
+            if (tabId === 'calendar') {
+                renderCalendar();
+            } else {
+                renderSpreadsheet();
+            }
+        }
+
+        function calculateDaysLeftForEvent(eventDate) {
+            if (!eventDate) return '-';
+            const today = new Date();
+            today.setHours(0,0,0,0);
+
+            const evtDate = new Date(eventDate);
+            evtDate.setHours(0,0,0,0);
+
+            const diffTime = evtDate - today;
+            return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        }
+
+        function calculateAllDaysLeft() {
+            ['HDV', 'HZK'].forEach(acc => {
+                eventsData[acc].forEach(evt => {
+                    evt.daysLeft = calculateDaysLeftForEvent(evt.date);
+                });
+            });
+        }
+
+        function toggleCellDropdown(menuId, event) {
+            if (event) event.stopPropagation();
+            const targetMenu = document.getElementById(menuId);
+            const isHidden = targetMenu.classList.contains('hidden');
+
+            // Close other cell dropdowns first
+            closeAllCellDropdowns();
+
+            if (isHidden) {
+                targetMenu.classList.remove('hidden');
+            }
+        }
+
+        function closeAllCellDropdowns() {
+            const activeMenus = document.querySelectorAll('.custom-cell-dropdown-menu');
+            activeMenus.forEach(menu => menu.classList.add('hidden'));
+        }
+
+        function renderSpreadsheet() {
+            const body = document.getElementById('spreadsheetBody');
+            const noEventsMsg = document.getElementById('noEventsMessage');
+            if (!body) return;
+
+            body.innerHTML = '';
+
+            document.getElementById('currentAccountTitle').innerText = state.currentAccount;
+            document.getElementById('driveAccountTitle').innerText = state.currentAccount;
+
+            const currentEvents = eventsData[state.currentAccount] || [];
+
+            const filteredEvents = currentEvents.filter(evt => {
+                if (state.filterHidden === 'hide') {
+                    const days = parseInt(evt.daysLeft);
+                    if (!isNaN(days) && days <= -60) {
+                        return false;
+                    }
+                }
+                return true;
+            });
+
+            if (filteredEvents.length === 0) {
+                noEventsMsg.classList.remove('hidden');
+                noEventsMsg.classList.add('flex');
+            } else {
+                noEventsMsg.classList.add('hidden');
+                noEventsMsg.classList.remove('flex');
+
+                filteredEvents.forEach((evt) => {
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-appleGray-50/50 dark:hover:bg-neutral-800/30 transition duration-150 align-top";
+                    tr.dataset.id = evt.id;
+
+                    let daysLeftBadge = `<span class="text-neutral-400 font-semibold">-</span>`;
+                    const days = parseInt(evt.daysLeft);
+                    if (!isNaN(days)) {
+                        if (days > 5) {
+                            daysLeftBadge = `<span class="bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-500/20">${days} Days</span>`;
+                        } else if (days >= 0) {
+                            daysLeftBadge = `<span class="bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 text-[10px] font-bold px-2 py-0.5 rounded-full border border-amber-500/20">${days} Days</span>`;
+                        } else {
+                            daysLeftBadge = `<span class="bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 text-[10px] font-bold px-2 py-0.5 rounded-full border border-rose-500/20">${days} Days</span>`;
+                        }
+                    }
+
+                    // Predefined Labels for dynamic custom dropdowns
+                    const displayStatus = evt.status === '-' ? '-' : (evt.status === 'On Progress' ? 'In Progress' : evt.status);
+                    const displayResult = evt.result || '-';
+                    const displayAlarm = evt.alarm === 'on' ? 'On' : 'Off';
+
+                    // Building columns using customized checkbox elements and inline absolute Tailwind selector drop-downs
+                    tr.innerHTML = `
+                        <!-- Customized Checklist using Tailwind Checkbox -->
+                        <td class="py-3 px-4 text-center">
+                            <label class="relative flex items-center justify-center cursor-pointer mt-1">
+                                <input type="checkbox" ${evt.checked ? 'checked' : ''} onchange="updateCellField('${evt.id}', 'checked', this.checked)" class="sr-only peer">
+                                <div class="w-5 h-5 bg-transparent border-2 border-appleGray-200 dark:border-neutral-700 rounded-md peer-checked:bg-appleBlue peer-checked:border-appleBlue flex items-center justify-center text-transparent peer-checked:text-white transition duration-200">
+                                    <i class="fa-solid fa-check text-[10px]"></i>
+                                </div>
+                            </label>
+                        </td>
+
+                        <!-- Event Name -->
+                        <td class="py-2.5 px-3">
+                            <input type="text" value="${evt.eventName || ''}" onchange="updateCellField('${evt.id}', 'eventName', this.value)" class="w-full bg-transparent border-b border-transparent focus:border-appleBlue p-1 text-xs font-semibold focus:outline-none dark:text-white" placeholder="New Event...">
+                        </td>
+
+                        <!-- Description -->
+                        <td class="py-2.5 px-3 max-w-[200px]">
+                            <div onclick="openTextEditor('${evt.id}', 'desc')" class="cursor-pointer hover:bg-appleGray-100 dark:hover:bg-neutral-800 p-1 rounded min-h-[28px] text-[11px] text-appleGray-300 truncate" title="Click to edit Description">
+                                ${evt.desc ? evt.desc : '<span class="italic text-neutral-500">Edit Description...</span>'}
+                            </div>
+                        </td>
+
+                        <!-- Date -->
+                        <td class="py-2.5 px-3">
+                            <input type="date" value="${evt.date || ''}" onchange="updateCellField('${evt.id}', 'date', this.value)" class="bg-transparent text-xs focus:outline-none border-b border-transparent focus:border-appleBlue p-1 cursor-pointer dark:text-white dark:bg-neutral-900 w-full">
+                        </td>
+
+                        <!-- Time -->
+                        <td class="py-2.5 px-3">
+                            <input type="time" value="${evt.time || ''}" onchange="updateCellField('${evt.id}', 'time', this.value)" class="bg-transparent text-xs focus:outline-none border-b border-transparent focus:border-appleBlue p-1 cursor-pointer dark:text-white dark:bg-neutral-900 w-full">
+                        </td>
+
+                        <!-- Days Left -->
+                        <td class="py-2.5 px-3 text-center">
+                            ${daysLeftBadge}
+                        </td>
+
+                        <!-- Custom Status Dropdown -->
+                        <td class="py-2.5 px-3 relative custom-dropdown-td">
+                            <button onclick="toggleCellDropdown('statusMenu_${evt.id}', event)" class="w-full flex items-center justify-between bg-appleGray-50 dark:bg-neutral-800 border border-appleGray-200 dark:border-neutral-700 px-2 py-1 rounded-lg text-[11px] font-bold text-left hover:bg-appleGray-100 dark:hover:bg-neutral-750 transition text-appleGray-500 dark:text-appleGray-100">
+                                <span id="statusLabel_${evt.id}">${displayStatus}</span>
+                                <i class="fa-solid fa-chevron-down text-[8px] text-appleGray-300"></i>
+                            </button>
+                            <div id="statusMenu_${evt.id}" class="custom-cell-dropdown-menu hidden absolute left-3 top-9 w-40 bg-white dark:bg-neutral-900 border border-appleGray-200 dark:border-neutral-700 rounded-xl shadow-lg py-1 z-50 text-appleGray-500 dark:text-appleGray-100">
+                                <button onclick="selectCellOption('${evt.id}', 'status', '-', event)" class="w-full text-left px-3 py-1.5 text-xs font-semibold hover:bg-appleGray-50 dark:hover:bg-neutral-800">-</button>
+                                <button onclick="selectCellOption('${evt.id}', 'status', 'Yet Started', event)" class="w-full text-left px-3 py-1.5 text-xs font-semibold hover:bg-appleGray-50 dark:hover:bg-neutral-800">Yet Started</button>
+                                <button onclick="selectCellOption('${evt.id}', 'status', 'On Progress', event)" class="w-full text-left px-3 py-1.5 text-xs font-semibold hover:bg-appleGray-50 dark:hover:bg-neutral-800">In Progress</button>
+                                <button onclick="selectCellOption('${evt.id}', 'status', 'Done', event)" class="w-full text-left px-3 py-1.5 text-xs font-semibold hover:bg-appleGray-50 dark:hover:bg-neutral-800">Done</button>
+                                <button onclick="selectCellOption('${evt.id}', 'status', 'Canceled', event)" class="w-full text-left px-3 py-1.5 text-xs font-semibold hover:bg-appleGray-50 dark:hover:bg-neutral-800">Canceled</button>
+                            </div>
+                        </td>
+
+                        <!-- Custom Result Dropdown -->
+                        <td class="py-2.5 px-3 relative custom-dropdown-td">
+                            <button onclick="toggleCellDropdown('resultMenu_${evt.id}', event)" class="w-full flex items-center justify-between bg-appleGray-50 dark:bg-neutral-800 border border-appleGray-200 dark:border-neutral-700 px-2 py-1 rounded-lg text-[11px] font-bold text-left hover:bg-appleGray-100 dark:hover:bg-neutral-750 transition text-appleGray-500 dark:text-appleGray-100">
+                                <span id="resultLabel_${evt.id}">${displayResult}</span>
+                                <i class="fa-solid fa-chevron-down text-[8px] text-appleGray-300"></i>
+                            </button>
+                            <div id="resultMenu_${evt.id}" class="custom-cell-dropdown-menu hidden absolute left-3 top-9 w-32 bg-white dark:bg-neutral-900 border border-appleGray-200 dark:border-neutral-700 rounded-xl shadow-lg py-1 z-50 text-appleGray-500 dark:text-appleGray-100">
+                                <button onclick="selectCellOption('${evt.id}', 'result', '-', event)" class="w-full text-left px-3 py-1.5 text-xs font-semibold hover:bg-appleGray-50 dark:hover:bg-neutral-800">-</button>
+                                <button onclick="selectCellOption('${evt.id}', 'result', 'Pass', event)" class="w-full text-left px-3 py-1.5 text-xs font-semibold hover:bg-appleGray-50 dark:hover:bg-neutral-800">Pass</button>
+                                <button onclick="selectCellOption('${evt.id}', 'result', 'Lose', event)" class="w-full text-left px-3 py-1.5 text-xs font-semibold hover:bg-appleGray-50 dark:hover:bg-neutral-800">Lose</button>
+                            </div>
+                        </td>
+
+                        <!-- Location -->
+                        <td class="py-2.5 px-3">
+                            <input type="text" value="${evt.location || ''}" onchange="updateCellField('${evt.id}', 'location', this.value)" class="w-full bg-transparent border-b border-transparent focus:border-appleBlue p-1 text-xs focus:outline-none dark:text-white" placeholder="Location...">
+                        </td>
+
+                        <!-- Details -->
+                        <td class="py-2.5 px-3 max-w-[200px]">
+                            <div onclick="openTextEditor('${evt.id}', 'details')" class="cursor-pointer hover:bg-appleGray-100 dark:hover:bg-neutral-800 p-1 rounded min-h-[28px] text-[11px] text-appleGray-300 truncate" title="Click to edit Additional Details">
+                                ${evt.details ? evt.details : '<span class="italic text-neutral-500">Edit Details...</span>'}
+                            </div>
+                        </td>
+
+                        <!-- Custom Alarm Dropdown -->
+                        <td class="py-2.5 px-3 relative custom-dropdown-td">
+                            <button onclick="toggleCellDropdown('alarmMenu_${evt.id}', event)" class="w-full flex items-center justify-between bg-appleGray-50 dark:bg-neutral-800 border border-appleGray-200 dark:border-neutral-700 px-2 py-1 rounded-lg text-[11px] font-bold text-left hover:bg-appleGray-100 dark:hover:bg-neutral-750 transition mx-auto text-appleGray-500 dark:text-appleGray-100">
+                                <span id="alarmLabel_${evt.id}">${displayAlarm}</span>
+                                <i class="fa-solid fa-chevron-down text-[8px] text-appleGray-300"></i>
+                            </button>
+                            <div id="alarmMenu_${evt.id}" class="custom-cell-dropdown-menu hidden absolute left-3 top-9 w-28 bg-white dark:bg-neutral-900 border border-appleGray-200 dark:border-neutral-700 rounded-xl shadow-lg py-1 z-50 text-appleGray-500 dark:text-appleGray-100">
+                                <button onclick="selectCellOption('${evt.id}', 'alarm', 'off', event)" class="w-full text-left px-3 py-1.5 text-xs font-semibold hover:bg-appleGray-50 dark:hover:bg-neutral-800">Off</button>
+                                <button onclick="selectCellOption('${evt.id}', 'alarm', 'on', event)" class="w-full text-left px-3 py-1.5 text-xs font-semibold hover:bg-appleGray-50 dark:hover:bg-neutral-800">On</button>
+                            </div>
+                        </td>
+
+                        <!-- Delete Action -->
+                        <td class="py-2.5 px-4 text-center">
+                            <button onclick="deleteEventRow('${evt.id}')" class="text-rose-500 hover:text-rose-600 dark:hover:text-rose-400 transition duration-150 p-1" title="Delete Event">
+                                <i class="fa-solid fa-trash-can text-sm"></i>
+                            </button>
+                        </td>
+                    `;
+                    body.appendChild(tr);
+                });
+            }
+
+            renderDriveFiles();
+        }
+
+        function addNewRow() {
+            const newRow = emptyEventRow();
+            eventsData[state.currentAccount].push(newRow);
+            renderSpreadsheet();
+            setTimeout(() => {
+                const tr = document.querySelector(`tr[data-id="${newRow.id}"]`);
+                if (tr) {
+                    const input = tr.querySelector('input[type="text"]');
+                    if (input) input.focus();
+                }
+            }, 50);
+        }
+
+        function deleteEventRow(id) {
+            eventsData[state.currentAccount] = eventsData[state.currentAccount].filter(evt => evt.id !== id);
+            renderSpreadsheet();
+        }
+
+        function updateCellField(rowId, field, value) {
+            const row = eventsData[state.currentAccount].find(evt => evt.id === rowId);
+            if (row) {
+                row[field] = value;
+                if (field === 'date') {
+                    row.daysLeft = calculateDaysLeftForEvent(value);
+                }
+            }
+        }
+
+        // Selection engine for custom dropdown cells
+        function selectCellOption(rowId, field, value, event) {
+            if (event) event.stopPropagation();
+            updateCellField(rowId, field, value);
+            closeAllCellDropdowns();
+            renderSpreadsheet();
+        }
+
+        function openTextEditor(rowId, field) {
+            state.activeEditingCell = { rowId, field };
+            const row = eventsData[state.currentAccount].find(evt => evt.id === rowId);
+            if (row) {
+                const editorTitle = document.getElementById('editorModalTitle');
+                editorTitle.innerText = field === 'desc' ? 'Edit Event Description' : 'Edit Event Additional Details';
+
+                const textarea = document.getElementById('editorModalTextarea');
+                textarea.value = row[field] || '';
+
+                const modal = document.getElementById('textEditorModal');
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                textarea.focus();
+            }
+        }
+
+        function closeTextEditor() {
+            document.getElementById('textEditorModal').classList.add('hidden');
+            document.getElementById('textEditorModal').classList.remove('flex');
+            state.activeEditingCell = { rowId: null, field: null };
+        }
+
+        function saveTextEditor() {
+            const { rowId, field } = state.activeEditingCell;
+            if (rowId && field) {
+                const textVal = document.getElementById('editorModalTextarea').value;
+                updateCellField(rowId, field, textVal);
+                renderSpreadsheet();
+            }
+            closeTextEditor();
+        }
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const newFileObj = {
+                    id: 'file_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now(),
+                    name: file.name,
+                    size: formatBytes(file.size),
+                    type: file.type || 'application/octet-stream',
+                    uploadedAt: new Date().toLocaleDateString('en-US'),
+                    data: e.target.result
+                };
+
+                driveData[state.currentAccount].push(newFileObj);
+                saveDriveToStorage();
+                showCustomToast("Upload Success", `${file.name} saved successfully inside Drive ${state.currentAccount}.`, "success");
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function renderDriveFiles() {
+            const grid = document.getElementById('driveFilesGrid');
+            if (!grid) return;
+
+            grid.innerHTML = '';
+
+            // Add standard Square Plus upload Card as first item inside Drive Files Grid
+            const uploadCard = document.createElement('label');
+            uploadCard.className = "aspect-square bg-appleGray-50 dark:bg-neutral-800/40 hover:bg-appleGray-100 dark:hover:bg-neutral-850/50 border-2 border-dashed border-appleGray-200 dark:border-neutral-700 hover:border-appleBlue dark:hover:border-appleBlue rounded-2xl flex flex-col items-center justify-center gap-2 cursor-pointer transition duration-200 group relative";
+            uploadCard.innerHTML = `
+                <div class="w-10 h-10 rounded-full bg-appleGray-100 dark:bg-neutral-800 group-hover:bg-appleBlue/10 flex items-center justify-center transition duration-200">
+                    <i class="fa-solid fa-plus text-appleGray-300 group-hover:text-appleBlue text-lg"></i>
+                </div>
+                <span class="text-xs font-semibold text-appleGray-300 group-hover:text-appleBlue">Add</span>
+                <input type="file" id="driveFileInput" class="hidden" onchange="handleFileUpload(event)">
+            `;
+            grid.appendChild(uploadCard);
+
+            const files = driveData[state.currentAccount] || [];
+
+            files.forEach(file => {
+                const card = document.createElement('div');
+                card.className = "aspect-square bg-appleGray-50 dark:bg-neutral-800 p-4 rounded-2xl border border-appleGray-200 dark:border-neutral-700 flex flex-col items-center justify-center text-center relative group hover:shadow transition duration-200";
+
+                let iconHtml = '<i class="fa-solid fa-file text-appleGray-300 text-2xl mb-2"></i>';
+                if (file.type.includes('image')) {
+                    iconHtml = `<img src="${file.data}" class="w-10 h-10 object-cover rounded-lg mb-2 shadow-sm">`;
+                } else if (file.type.includes('pdf')) {
+                    iconHtml = '<i class="fa-solid fa-file-pdf text-rose-500 text-2xl mb-2"></i>';
+                } else if (file.type.includes('word') || file.type.includes('text')) {
+                    iconHtml = '<i class="fa-solid fa-file-word text-appleBlue text-2xl mb-2"></i>';
+                } else if (file.type.includes('sheet') || file.type.includes('excel')) {
+                    iconHtml = '<i class="fa-solid fa-file-excel text-emerald-600 text-2xl mb-2"></i>';
+                }
+
+                card.innerHTML = `
+                    <button onclick="deleteDriveFile('${file.id}')" class="absolute top-2 right-2 p-1 text-rose-500 hover:bg-rose-50 dark:hover:bg-neutral-900 rounded-full opacity-0 group-hover:opacity-100 transition duration-150" title="Delete File">
+                        <i class="fa-solid fa-circle-xmark text-base"></i>
+                    </button>
+
+                    <div class="cursor-pointer flex flex-col items-center w-full" onclick="downloadDriveFile('${file.id}')">
+                        ${iconHtml}
+                        <h4 class="text-[11px] font-bold truncate w-full px-1 dark:text-white" title="${file.name}">${file.name}</h4>
+                        <p class="text-[9px] text-appleGray-300 mt-0.5">${file.size}</p>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function deleteDriveFile(fileId) {
+            driveData[state.currentAccount] = driveData[state.currentAccount].filter(f => f.id !== fileId);
+            saveDriveToStorage();
+            showCustomToast("File Deleted", "Attachment removed from local storage.", "info");
+        }
+
+        function downloadDriveFile(fileId) {
+            const file = driveData[state.currentAccount].find(f => f.id === fileId);
+            if (file) {
+                const a = document.createElement('a');
+                a.href = file.data;
+                a.download = file.name;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            }
+        }
+
+        function formatBytes(bytes, decimals = 2) {
+            if (!+bytes) return '0 Bytes';
+            const k = 1024;
+            const dm = decimals < 0 ? 0 : decimals;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+        }
+
+        const ENGLISH_MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+        function renderCalendar() {
+            const grid = document.getElementById('calendarGrid');
+            const monthYearHeader = document.getElementById('calendarMonthYear');
+            if (!grid) return;
+
+            grid.innerHTML = '';
+            monthYearHeader.innerText = `${ENGLISH_MONTHS[state.calendarMonth]} ${state.calendarYear}`;
+
+            const firstDay = new Date(state.calendarYear, state.calendarMonth, 1).getDay();
+            const daysInMonth = new Date(state.calendarYear, state.calendarMonth + 1, 0).getDate();
+            const prevDaysInMonth = new Date(state.calendarYear, state.calendarMonth, 0).getDate();
+            const totalBoxes = 42;
+
+            const hdvEvents = eventsData.HDV || [];
+            const hzkEvents = eventsData.HZK || [];
+            const today = new Date();
+            const todayStr = today.toISOString().split('T')[0];
+
+            let dayCounter = 1;
+            let nextMonthCounter = 1;
+
+            for (let i = 0; i < totalBoxes; i++) {
+                const cell = document.createElement('div');
+                cell.className = "bg-white dark:bg-neutral-900 min-h-[100px] p-2 flex flex-col justify-between transition group hover:bg-appleGray-50 dark:hover:bg-neutral-800/20";
+
+                let targetDateStr = '';
+                let dayNum = 0;
+
+                if (i < firstDay) {
+                    dayNum = prevDaysInMonth - firstDay + i + 1;
+                    const prevMonth = state.calendarMonth === 0 ? 11 : state.calendarMonth - 1;
+                    const prevYear = state.calendarMonth === 0 ? state.calendarYear - 1 : state.calendarYear;
+                    targetDateStr = `${prevYear}-${String(prevMonth + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+                    cell.classList.add('opacity-40');
+                } else if (dayCounter <= daysInMonth) {
+                    dayNum = dayCounter++;
+                    targetDateStr = `${state.calendarYear}-${String(state.calendarMonth + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+
+                    if (targetDateStr === todayStr) {
+                        cell.classList.add('ring-2', 'ring-appleBlue', 'ring-inset');
+                    }
+                } else {
+                    dayNum = nextMonthCounter++;
+                    const nextMonth = state.calendarMonth === 11 ? 0 : state.calendarMonth + 1;
+                    const nextYear = state.calendarMonth === 11 ? state.calendarYear + 1 : state.calendarYear;
+                    targetDateStr = `${nextYear}-${String(nextMonth + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+                    cell.classList.add('opacity-40');
+                }
+
+                const isToday = targetDateStr === todayStr;
+                let dayNumberHtml = isToday
+                    ? `<span class="bg-appleBlue text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center">${dayNum}</span>`
+                    : `<span class="text-xs font-bold dark:text-neutral-200">${dayNum}</span>`;
+
+                cell.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        ${dayNumberHtml}
+                    </div>
+                    <div class="flex-1 flex flex-col gap-1 mt-1.5 overflow-y-auto max-h-[70px]" id="events-container-${i}">
+                        <!-- Badges rendered below -->
+                    </div>
+                `;
+
+                const eventsContainer = cell.querySelector(`#events-container-${i}`);
+                const dayHdvEvents = hdvEvents.filter(evt => evt.date === targetDateStr);
+                const dayHzkEvents = hzkEvents.filter(evt => evt.date === targetDateStr);
+
+                dayHdvEvents.forEach(evt => {
+                    const badge = document.createElement('div');
+                    badge.className = "bg-appleOrange/15 text-appleOrange border-l-2 border-appleOrange text-[9px] font-bold px-1 py-0.5 rounded-r truncate cursor-pointer hover:bg-appleOrange/25 transition";
+                    badge.innerText = `[HDV] ${evt.eventName || 'Agenda'}`;
+                    badge.onclick = (e) => {
+                        e.stopPropagation();
+                        switchAccount('HDV');
+                        switchTab('event-list');
+                        setTimeout(() => openTextEditor(evt.id, 'desc'), 100);
+                    };
+                    eventsContainer.appendChild(badge);
+                });
+
+                dayHzkEvents.forEach(evt => {
+                    const badge = document.createElement('div');
+                    badge.className = "bg-appleBlue/15 text-appleBlue border-l-2 border-appleBlue text-[9px] font-bold px-1 py-0.5 rounded-r truncate cursor-pointer hover:bg-appleBlue/25 transition";
+                    badge.innerText = `[HZK] ${evt.eventName || 'Agenda'}`;
+                    badge.onclick = (e) => {
+                        e.stopPropagation();
+                        switchAccount('HZK');
+                        switchTab('event-list');
+                        setTimeout(() => openTextEditor(evt.id, 'desc'), 100);
+                    };
+                    eventsContainer.appendChild(badge);
+                });
+
+                grid.appendChild(cell);
+            }
+        }
+
+        function changeMonth(direction) {
+            state.calendarMonth += direction;
+            if (state.calendarMonth < 0) {
+                state.calendarMonth = 11;
+                state.calendarYear--;
+            } else if (state.calendarMonth > 11) {
+                state.calendarMonth = 0;
+                state.calendarYear++;
+            }
+            renderCalendar();
+        }
+
+        function setCalendarToToday() {
+            const today = new Date();
+            state.calendarYear = today.getFullYear();
+            state.calendarMonth = today.getMonth();
+            renderCalendar();
+        }
+
+        function openSettings() {
+            // Clone actual settings into tempSettings for editing
+            tempSettings = { ...settings };
+
+            // Apply Display Theme selector visually
+            setThemeSetting(tempSettings.theme);
+
+            // Sync custom dropdown values to labels
+            updateSettingLabels();
+
+            const bothOptions = document.getElementById('bothDominantOptions');
+            const bothToggle = document.getElementById('bothAlarmToggle');
+            bothToggle.checked = tempSettings.bothAlarmOn;
+
+            if (tempSettings.dominantAccount === 'Both') {
+                bothOptions.classList.remove('hidden');
+            } else {
+                bothOptions.classList.add('hidden');
+            }
+
+            // Sync Custom Alarm option visibility inside settings
+            if (tempSettings.customAlarmAudio) {
+                const option = document.getElementById('customAudioSettingOption');
+                if (option) option.classList.remove('hidden');
+            }
+
+            const modal = document.getElementById('settingsModal');
+            const content = document.getElementById('settingsContent');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => {
+                content.classList.remove('scale-95');
+                content.classList.add('scale-100');
+            }, 50);
+        }
+
+        function closeSettings() {
+            const modal = document.getElementById('settingsModal');
+            const content = document.getElementById('settingsContent');
+            content.classList.remove('scale-100');
+            content.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }, 150);
+        }
+
+        function setThemeSetting(themeValue) {
+            tempSettings.theme = themeValue;
+            const lightBtn = document.getElementById('themeBtnLight');
+            const darkBtn = document.getElementById('themeBtnDark');
+            if (themeValue === 'dark') {
+                darkBtn.className = "flex items-center justify-center gap-2 p-3 border border-appleBlue bg-appleBlue/10 dark:bg-appleBlue/20 rounded-xl text-xs font-semibold text-appleBlue transition w-full shadow-sm";
+                lightBtn.className = "flex items-center justify-center gap-2 p-3 border border-appleGray-200 dark:border-neutral-700 hover:bg-appleGray-100 dark:hover:bg-neutral-800 rounded-xl text-xs font-semibold text-appleGray-500 dark:text-appleGray-300 transition w-full";
+            } else {
+                lightBtn.className = "flex items-center justify-center gap-2 p-3 border border-appleBlue bg-appleBlue/5 rounded-xl text-xs font-semibold text-appleBlue transition w-full shadow-sm";
+                darkBtn.className = "flex items-center justify-center gap-2 p-3 border border-appleGray-200 dark:border-neutral-700 hover:bg-appleGray-100 dark:hover:bg-neutral-800 rounded-xl text-xs font-semibold text-appleGray-500 dark:text-appleGray-300 transition w-full";
+            }
+        }
+
+        // Custom Dropdown triggers inside settings modal
+        function toggleSettingDropdown(menuId, event) {
+            if (event) event.stopPropagation();
+            const menu = document.getElementById(menuId);
+            const isHidden = menu.classList.contains('hidden');
+
+            // Close other settings dropdown menus
+            document.getElementById('settingTabOrderMenu')?.classList.add('hidden');
+            document.getElementById('settingAlarmAudioMenu')?.classList.add('hidden');
+            document.getElementById('settingDominantAccountMenu')?.classList.add('hidden');
+
+            if (isHidden) {
+                menu.classList.remove('hidden');
+            }
+        }
+
+        function selectSettingOption(key, val, labelText, event) {
+            if (event) event.stopPropagation();
+
+            tempSettings[key] = val;
+
+            // Close all dropdowns
+            document.getElementById('settingTabOrderMenu')?.classList.add('hidden');
+            document.getElementById('settingAlarmAudioMenu')?.classList.add('hidden');
+            document.getElementById('settingDominantAccountMenu')?.classList.add('hidden');
+
+            // Update Labels
+            updateSettingLabels();
+
+            if (key === 'dominantAccount') {
+                const bothOptions = document.getElementById('bothDominantOptions');
+                if (val === 'Both') {
+                    bothOptions.classList.remove('hidden');
+                } else {
+                    bothOptions.classList.add('hidden');
+                }
+            }
+        }
+
+        function updateSettingLabels() {
+            // Update Primary Tab Order label
+            const tabOrderLabelText = tempSettings.tabOrder === 'event-first'
+                ? '1. Event List ➔ 2. Calendar'
+                : '1. Calendar ➔ 2. Event List';
+            document.getElementById('settingTabOrderLabel').innerText = tabOrderLabelText;
+
+            // Update Alarm Tone label
+            const alarmNames = {
+                chime: 'Modern Chime (Bells)',
+                digital: 'Classic Beep Pattern',
+                radar: 'Apple Radar Soft',
+                custom: 'Uploaded Custom Tone'
+            };
+            document.getElementById('settingAlarmAudioLabel').innerText = alarmNames[tempSettings.alarmSound] || 'Modern Chime (Bells)';
+
+            // Update Dominant Account label
+            const dominantNames = {
+                HDV: 'HDV (HDV Alarms Trigger only)',
+                HZK: 'HZK (HZK Alarms Trigger only)',
+                Both: 'Both (Dual Alarms active)'
+            };
+            document.getElementById('settingDominantAccountLabel').innerText = dominantNames[tempSettings.dominantAccount] || 'Both (Dual Alarms active)';
+        }
+
+        function handleAlarmAudioUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                tempSettings.customAlarmAudio = e.target.result;
+
+                // Show custom option inside setting select drop-down list
+                const option = document.getElementById('customAudioSettingOption');
+                if (option) option.classList.remove('hidden');
+
+                // Select custom alarm sound instantly inside temp variables
+                selectSettingOption('alarmSound', 'custom', 'Uploaded Custom Tone');
+
+                showCustomToast("Tone Uploaded", "Custom alarm audio uploaded successfully.", "success");
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function saveAllSettings() {
+            settings = { ...tempSettings };
+            settings.bothAlarmOn = document.getElementById('bothAlarmToggle').checked;
+
+            applyTheme();
+            renderSidebarTabs();
+            saveSettingsToStorage();
+            closeSettings();
+
+            showCustomToast("Preferences Saved", "Customizations applied successfully.", "success");
+        }
+
+        let lastCheckedMinute = -1;
+        let isCurrentlyRinging = false;
+
+        function updateClockAndTriggerAlarms() {
+            const now = new Date();
+            const hrsStr = String(now.getHours()).padStart(2, '0');
+            const minsStr = String(now.getMinutes()).padStart(2, '0');
+            const secsStr = String(now.getSeconds()).padStart(2, '0');
+
+            document.getElementById('currentTime').innerText = `${hrsStr}:${minsStr}:${secsStr}`;
+
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('currentDate').innerText = now.toLocaleDateString('en-US', options);
+
+            const currentMin = now.getMinutes();
+            if (currentMin !== lastCheckedMinute) {
+                lastCheckedMinute = currentMin;
+                checkAlarmSchedules(now);
+            }
+        }
+
+        function checkAlarmSchedules(nowTime) {
+            const todayStr = nowTime.toISOString().split('T')[0];
+            const currentHour = nowTime.getHours();
+            const currentMinute = nowTime.getMinutes();
+
+            ['HDV', 'HZK'].forEach(acc => {
+                if (!isAlarmAllowedForAccount(acc)) return;
+
+                const events = eventsData[acc] || [];
+                events.forEach(evt => {
+                    if (evt.alarm === 'on' && evt.date === todayStr && evt.time) {
+                        const [evtHour, evtMin] = evt.time.split(':').map(Number);
+
+                        let alarmTargetHour = evtHour - 1;
+                        let alarmTargetMin = evtMin;
+
+                        if (alarmTargetHour < 0) {
+                            alarmTargetHour = 23;
+                        }
+
+                        if (currentHour === alarmTargetHour && currentMinute === alarmTargetMin) {
+                            triggerAlarmRinging(acc, evt);
+                        }
+                    }
+                });
+            });
+        }
+
+        function isAlarmAllowedForAccount(accName) {
+            const dominant = settings.dominantAccount;
+            if (dominant === 'Both') {
+                return settings.bothAlarmOn;
+            }
+            return dominant === accName;
+        }
+
+        function triggerAlarmRinging(account, eventObj) {
+            if (isCurrentlyRinging) return;
+            isCurrentlyRinging = true;
+
+            const popup = document.getElementById('alarmAlertPopup');
+            const pAcc = document.getElementById('alarmPopupAccount');
+            const pTitle = document.getElementById('alarmPopupTitle');
+            const pTime = document.getElementById('alarmPopupTime');
+
+            pAcc.innerText = `Account ${account}`;
+            if (account === 'HDV') {
+                pAcc.className = "text-[9px] font-bold px-2 py-0.5 rounded-full uppercase bg-appleOrange text-white";
+                popup.className = "fixed bottom-6 right-6 z-50 bg-white dark:bg-neutral-900 border-2 border-appleOrange shadow-2xl p-5 rounded-3xl max-w-sm w-full transform translate-y-0 opacity-100 pointer-events-auto transition-all duration-500 flex items-start gap-4";
+            } else {
+                pAcc.className = "text-[9px] font-bold px-2 py-0.5 rounded-full uppercase bg-appleBlue text-white";
+                popup.className = "fixed bottom-6 right-6 z-50 bg-white dark:bg-neutral-900 border-2 border-appleBlue shadow-2xl p-5 rounded-3xl max-w-sm w-full transform translate-y-0 opacity-100 pointer-events-auto transition-all duration-500 flex items-start gap-4";
+            }
+
+            pTitle.innerText = eventObj.eventName || "Untitled Event";
+            pTime.innerText = `Starts at ${eventObj.time || '-'} (Alarm H-1 Hour)`;
+
+            const audioObj = document.getElementById('audioElement');
+            if (settings.alarmSound === 'custom' && settings.customAlarmAudio) {
+                audioObj.src = settings.customAlarmAudio;
+            } else {
+                audioObj.src = alarmSoundSources[settings.alarmSound] || alarmSoundSources['chime'];
+            }
+
+            audioObj.play().catch(err => {
+                console.log("Audio autoplay prevented. Awaiting user interaction.", err);
+            });
+        }
+
+        function stopAlarmRinging() {
+            const audioObj = document.getElementById('audioElement');
+            audioObj.pause();
+            audioObj.currentTime = 0;
+
+            const popup = document.getElementById('alarmAlertPopup');
+            popup.className = "fixed bottom-6 right-6 z-50 bg-white dark:bg-neutral-900 border shadow-2xl p-5 rounded-3xl max-w-sm w-full transform translate-y-20 opacity-0 pointer-events-none transition-all duration-500 flex items-start gap-4";
+            isCurrentlyRinging = false;
+        }
+
+        function playTestAlarm() {
+            const selVal = tempSettings.alarmSound;
+            let testSource = alarmSoundSources[selVal];
+            if (selVal === 'custom' && tempSettings.customAlarmAudio) {
+                testSource = tempSettings.customAlarmAudio;
+            }
+
+            if (testSource) {
+                const testAudio = new Audio(testSource);
+                testAudio.play().catch(err => console.log("Sound test preview was blocked.", err));
+            }
+        }
+
+        function toggleTailwindDropdown(menuId, event) {
+            if (event) event.stopPropagation();
+            const targetMenu = document.getElementById(menuId);
+            const isHidden = targetMenu.classList.contains('hidden');
+
+            // Close other top header menus first
+            document.getElementById('userDropdownMenu')?.classList.add('hidden');
+            document.getElementById('filterDropdownMenu')?.classList.add('hidden');
+
+            if (isHidden) {
+                targetMenu.classList.remove('hidden');
+            }
+        }
+
+        function selectUser(userVal) {
+            state.currentAccount = userVal;
+            const displayLabel = userVal === 'HDV' ? 'HDV (Orange)' : 'HZK (Blue)';
+            document.getElementById('selectedUserLabel').innerText = displayLabel;
+            document.getElementById('userDropdownMenu').classList.add('hidden');
+
+            renderSpreadsheet();
+            renderDriveFiles();
+        }
+
+        function selectFilter(filterVal) {
+            state.filterHidden = filterVal;
+            const displayLabel = filterVal === 'hide' ? 'Hide Overdue (< -10 Days)' : 'Show All Events';
+            document.getElementById('selectedFilterLabel').innerText = displayLabel;
+            document.getElementById('filterDropdownMenu').classList.add('hidden');
+
+            renderSpreadsheet();
+        }
+
+        function switchAccount(accName) {
+            selectUser(accName);
+        }
+
+        function showCustomToast(title, msg, type = 'info') {
+            const existingToast = document.getElementById('customSystemToast');
+            if (existingToast) existingToast.remove();
+
+            const toast = document.createElement('div');
+            toast.id = 'customSystemToast';
+
+            let iconClass = 'fa-circle-info text-appleBlue';
+            if (type === 'success') iconClass = 'fa-circle-check text-emerald-500';
+            if (type === 'error') iconClass = 'fa-triangle-exclamation text-rose-500';
+
+            toast.className = "fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-white/90 dark:bg-neutral-900/90 shadow-xl border border-appleGray-200 dark:border-neutral-800 px-6 py-3 rounded-full flex items-center gap-3 transition-all duration-300 transform -translate-y-20 opacity-0 backdrop-blur text-appleGray-500 dark:text-appleGray-100";
+            toast.innerHTML = `
+                <i class="fa-solid ${iconClass} text-sm"></i>
+                <div class="flex flex-col">
+                    <span class="text-xs font-bold dark:text-white">${title}</span>
+                    <span class="text-[10px] text-appleGray-300 leading-none mt-0.5">${msg}</span>
+                </div>
+            `;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove('-translate-y-20', 'opacity-0');
+            }, 50);
+
+            setTimeout(() => {
+                toast.classList.add('-translate-y-20', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadAllFromStorage();
+            applyTheme();
+            renderSidebarTabs();
+            calculateAllDaysLeft();
+            renderSpreadsheet();
+
+            // Click outside handler to close any active Tailwind menus or custom cell dropdown lists
+            window.addEventListener('click', (e) => {
+                if (!e.target.closest('#userDropdownContainer')) {
+                    document.getElementById('userDropdownMenu')?.classList.add('hidden');
+                }
+                if (!e.target.closest('#filterDropdownContainer')) {
+                    document.getElementById('filterDropdownMenu')?.classList.add('hidden');
+                }
+                if (!e.target.closest('.custom-dropdown-td')) {
+                    closeAllCellDropdowns();
+                }
+                // Click outside handlers for settings modal custom dropdowns
+                if (!e.target.closest('#settingTabOrderContainer')) {
+                    document.getElementById('settingTabOrderMenu')?.classList.add('hidden');
+                }
+                if (!e.target.closest('#settingAlarmAudioContainer')) {
+                    document.getElementById('settingAlarmAudioMenu')?.classList.add('hidden');
+                }
+                if (!e.target.closest('#settingDominantAccountContainer')) {
+                    document.getElementById('settingDominantAccountMenu')?.classList.add('hidden');
+                }
+            });
+
+            updateClockAndTriggerAlarms();
+            setInterval(updateClockAndTriggerAlarms, 1000);
+        });
+    </script>
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+        // TODO: Add SDKs for Firebase products that you want to use
+        // https://firebase.google.com/docs/web/setup#available-libraries
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAg-EElXsDdLpaGbFNyz2a3lvpaM0HNOc0",
+            authDomain: "shared-calendar-586ae.firebaseapp.com",
+            projectId: "shared-calendar-586ae",
+            storageBucket: "shared-calendar-586ae.firebasestorage.app",
+            messagingSenderId: "718097978700",
+            appId: "1:718097978700:web:f8ebe9b2449f569a2aabe9"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+    </script>
+</body>
+</html>
