@@ -425,7 +425,34 @@
 
     <audio id="audioElement" preload="auto" loop></audio>
 
-    <script>
+    <script type="module">
+
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+
+        import {
+            getFirestore,
+            doc,
+            getDoc,
+            setDoc,
+            onSnapshot
+        } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+        // TODO: Add SDKs for Firebase products that you want to use
+        // https://firebase.google.com/docs/web/setup#available-libraries
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAg-EElXsDdLpaGbFNyz2a3lvpaM0HNOc0",
+            authDomain: "shared-calendar-586ae.firebaseapp.com",
+            projectId: "shared-calendar-586ae",
+            storageBucket: "shared-calendar-586ae.firebasestorage.app",
+            messagingSenderId: "718097978700",
+            appId: "1:718097978700:web:f8ebe9b2449f569a2aabe9"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
         const APP_ID = "apple-multi-calendar-drive";
 
         // Initial core application settings
@@ -522,50 +549,117 @@
             radar: audioSynthesizer.generateBeep(440, 0.6, 2)
         };
 
-        function loadAllFromStorage() {
+        async function loadAllFromStorage() {
             try {
-                const storedSettings = localStorage.getItem(`${APP_ID}_settings`);
-                if (storedSettings) {
-                    settings = { ...settings, ...JSON.parse(storedSettings) };
-                }
 
-                const storedEvents = localStorage.getItem(`${APP_ID}_events`);
-                if (storedEvents) {
-                    eventsData = JSON.parse(storedEvents);
+                // ===== SETTINGS =====
+                const settingsSnap = await getDoc(doc(db, "calendar", "shared"));
+
+                if (settingsSnap.exists()) {
+
+                    const data = settingsSnap.data();
+
+                    if (data.settings) {
+                        settings = { ...settings, ...data.settings };
+                    }
+
+                    if (data.events) {
+                        eventsData = data.events;
+                    } else {
+                        populateInitialData();
+                    }
+
+                    if (data.drive) {
+                        driveData = data.drive;
+                    }
+
                 } else {
+
+                    // Firestore masih kosong
                     populateInitialData();
+
                 }
 
-                const storedDrive = localStorage.getItem(`${APP_ID}_drive`);
-                if (storedDrive) {
-                    driveData = JSON.parse(storedDrive);
-                }
-
-                // If custom alarm was loaded, unhide option
+                // Jika custom audio ada
                 if (settings.customAlarmAudio) {
-                    const option = document.getElementById('customAudioSettingOption');
-                    if (option) option.classList.remove('hidden');
+                    const option = document.getElementById("customAudioSettingOption");
+                    if (option) option.classList.remove("hidden");
                 }
+
             } catch (err) {
-                console.error("Local storage initialization failed", err);
+
+                console.error("Firestore initialization failed", err);
+
             }
         }
 
-        function saveAllEvents() {
-            localStorage.setItem(`${APP_ID}_events`, JSON.stringify(eventsData));
-            calculateAllDaysLeft();
-            renderSpreadsheet();
-            renderCalendar();
-            showCustomToast("Data Saved", "Local database events updated successfully.", "success");
+        async function saveAllEvents() {
+            try {
+                await setDoc(
+                    doc(db, "calendar", "shared"),
+                    {
+                        events: eventsData
+                    },
+                    { merge: true }
+                );
+
+                calculateAllDaysLeft();
+                renderSpreadsheet();
+                renderCalendar();
+
+                showCustomToast(
+                    "Data Saved",
+                    "Firestore database updated successfully.",
+                    "success"
+                );
+
+            } catch (error) {
+                console.error(error);
+
+                showCustomToast(
+                    "Save Failed",
+                    error.message,
+                    "error"
+                );
+            }
         }
 
-        function saveDriveToStorage() {
-            localStorage.setItem(`${APP_ID}_drive`, JSON.stringify(driveData));
-            renderDriveFiles();
+        async function saveDriveToStorage() {
+            try {
+
+                await setDoc(
+                    doc(db, "calendar", "shared"),
+                    {
+                        drive: driveData
+                    },
+                    { merge: true }
+                );
+
+                renderDriveFiles();
+
+            } catch (error) {
+
+                console.error("Failed to save drive:", error);
+
+            }
         }
 
-        function saveSettingsToStorage() {
-            localStorage.setItem(`${APP_ID}_settings`, JSON.stringify(settings));
+        async function saveSettingsToStorage() {
+            try {
+
+                await setDoc(
+                    doc(db, "calendar", "shared"),
+                    {
+                        settings: settings
+                    },
+                    { merge: true }
+                );
+
+            } catch (error) {
+
+                console.error("Failed to save settings:", error);
+
+            }
         }
 
         function populateInitialData() {
@@ -974,12 +1068,12 @@
             closeTextEditor();
         }
 
-        function handleFileUpload(event) {
+        async function handleFileUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
 
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = async function(e) {
                 const newFileObj = {
                     id: 'file_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now(),
                     name: file.name,
@@ -990,7 +1084,7 @@
                 };
 
                 driveData[state.currentAccount].push(newFileObj);
-                saveDriveToStorage();
+                await saveDriveToStorage();
                 showCustomToast("Upload Success", `${file.name} saved successfully inside Drive ${state.currentAccount}.`, "success");
             };
             reader.readAsDataURL(file);
@@ -1046,9 +1140,9 @@
             });
         }
 
-        function deleteDriveFile(fileId) {
+        async function deleteDriveFile(fileId) {
             driveData[state.currentAccount] = driveData[state.currentAccount].filter(f => f.id !== fileId);
-            saveDriveToStorage();
+            await saveDriveToStorage();
             showCustomToast("File Deleted", "Attachment removed from local storage.", "info");
         }
 
@@ -1335,13 +1429,13 @@
             reader.readAsDataURL(file);
         }
 
-        function saveAllSettings() {
+        async function saveAllSettings() {
             settings = { ...tempSettings };
             settings.bothAlarmOn = document.getElementById('bothAlarmToggle').checked;
 
             applyTheme();
             renderSidebarTabs();
-            saveSettingsToStorage();
+            await saveSettingsToStorage();
             closeSettings();
 
             showCustomToast("Preferences Saved", "Customizations applied successfully.", "success");
@@ -1528,8 +1622,8 @@
             }, 3000);
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            loadAllFromStorage();
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadAllFromStorage();
             applyTheme();
             renderSidebarTabs();
             calculateAllDaysLeft();
@@ -1561,25 +1655,31 @@
             updateClockAndTriggerAlarms();
             setInterval(updateClockAndTriggerAlarms, 1000);
         });
-    </script>
-    <script type="module">
-        // Import the functions you need from the SDKs you need
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
-        // TODO: Add SDKs for Firebase products that you want to use
-        // https://firebase.google.com/docs/web/setup#available-libraries
+        onSnapshot(doc(db, "calendar", "shared"), (snapshot) => {
 
-        // Your web app's Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyAg-EElXsDdLpaGbFNyz2a3lvpaM0HNOc0",
-            authDomain: "shared-calendar-586ae.firebaseapp.com",
-            projectId: "shared-calendar-586ae",
-            storageBucket: "shared-calendar-586ae.firebasestorage.app",
-            messagingSenderId: "718097978700",
-            appId: "1:718097978700:web:f8ebe9b2449f569a2aabe9"
-        };
+            if (!snapshot.exists()) return;
 
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
+            const data = snapshot.data();
+
+            if (data.events)
+                eventsData = data.events;
+
+            if (data.settings)
+                settings = {
+                    ...settings,
+                    ...data.settings
+                };
+
+            if (data.drive)
+                driveData = data.drive;
+
+            calculateAllDaysLeft();
+            renderSpreadsheet();
+            renderCalendar();
+            renderDriveFiles();
+            applyTheme();
+
+        });
     </script>
 </body>
 </html>
